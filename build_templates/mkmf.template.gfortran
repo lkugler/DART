@@ -132,8 +132,10 @@ LD = gfortran
 #
 # NETCDF = /opt/local
 
-INCS = -I$(NETCDF)/include
-LIBS = -L$(NETCDF)/lib -lnetcdff -lnetcdf
+DART=/Users/nancy/git/DART/dart
+
+INCS = -I$(NETCDF)/include -I$(DART)/library -I$(DART)/include -I$(DART)/lib
+LIBS = -L$(DART)/library -ldart -L$(NETCDF)/lib -lnetcdff -lnetcdf
 FFLAGS  = -O2 -ffree-line-length-none $(INCS)
 LDFLAGS = $(FFLAGS) $(LIBS)
 
