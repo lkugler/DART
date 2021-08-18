@@ -368,6 +368,54 @@ use types_mod, only : L_over_Rv, ps0, earth_radius, gravity
 use types_mod, only : metadatalength, obstypelength, varnamelength, vtablenamelength
 use types_mod, only : MAX_NUM_DOMS, MAX_FILES
 
+!../assimilation_code/modules/utilities/utilities_mod.f90
+use utilities_mod, only : get_unit, &
+          open_file, &
+          close_file, &
+          file_exist, &
+          error_handler, &
+          to_upper, &
+          squeeze_out_blanks, &
+          next_file, & 
+          logfileunit, &
+          nmlfileunit, &
+          find_textfile_dims, &
+          file_to_text, &
+          timestamp, &
+          set_tasknum, &
+          set_output, &
+          do_output, &
+          set_nml_output, &
+          E_DBG, &
+          E_MSG, &
+          E_ALLMSG, &
+          E_WARN, &
+          E_ERR, &
+          is_longitude_between, &
+          get_next_filename, &
+          ascii_file_format, &
+          set_filename_list, &
+          set_multiple_filename_lists, &
+          scalar, &
+          string_to_real, &
+          string_to_integer, &
+          string_to_logical, &
+          find_enclosing_indices, &
+          find_first_occurrence, &
+          array_dump, &
+          dump_unit_attributes, &
+          initialize_utilities, &
+          finalize_utilities, &
+          register_module, &
+          find_namelist_in_file, &
+          check_namelist_read, &
+          get_value_from_string, &
+          do_nml_file, &
+          do_nml_term, &
+          log_it, &
+          interactive_r, &
+          interactive_i
+
 !---------------------------------------------
 
 implicit none
@@ -717,6 +765,55 @@ public :: t_kelvin, es_alpha, es_beta, es_gamma, gas_constant_v, gas_constant
 public :: L_over_Rv, ps0, earth_radius, gravity
 public :: metadatalength, obstypelength, varnamelength, vtablenamelength
 public :: MAX_NUM_DOMS, MAX_FILES
+
+
+!../assimilation_code/modules/utilities/utilities_mod.f90
+public :: get_unit, &
+          open_file, &
+          close_file, &
+          file_exist, &
+          error_handler, &
+          to_upper, &
+          squeeze_out_blanks, &
+          next_file, & 
+          logfileunit, &
+          nmlfileunit, &
+          find_textfile_dims, &
+          file_to_text, &
+          timestamp, &
+          set_tasknum, &
+          set_output, &
+          do_output, &
+          set_nml_output, &
+          E_DBG, &
+          E_MSG, &
+          E_ALLMSG, &
+          E_WARN, &
+          E_ERR, &
+          is_longitude_between, &
+          get_next_filename, &
+          ascii_file_format, &
+          set_filename_list, &
+          set_multiple_filename_lists, &
+          scalar, &
+          string_to_real, &
+          string_to_integer, &
+          string_to_logical, &
+          find_enclosing_indices, &
+          find_first_occurrence, &
+          array_dump, &
+          dump_unit_attributes, &
+          initialize_utilities, &
+          finalize_utilities, &
+          register_module, &
+          find_namelist_in_file, &
+          check_namelist_read, &
+          get_value_from_string, &
+          do_nml_file, &
+          do_nml_term, &
+          log_it, &
+          interactive_r, &
+          interactive_i
 
 !---------------------------------------------
 

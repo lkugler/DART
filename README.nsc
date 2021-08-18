@@ -1,6 +1,6 @@
 
 this branch is an attempt to combine as many modules as possible
-into what appears to users as a single "dart module".  this will
+into what appears to users to be a single "dart module".  this will
 allow us to rearrange the code inside the modules, split a single
 file into multiple modules, etc.
 
@@ -35,7 +35,7 @@ needs to be a way to build it before building other programs.
 
 things i've learned so far - the use statements can have
 multiple operator() lines in different modules, but the
-public lines can only have a single instant of each
+public lines can only have a single instance of each
 operator type.  e.g. operator(==)
 
 maybe it's easier to make the default for the dart_mod
@@ -56,6 +56,7 @@ my tests so far:
 
 - went into $DART/lib 
 - ran ./create_dart_lib
+  (this currently requires setting the compiler name in the script)
 
 - went into assimilation_code/programs/obs_assim_count/work
 - ran quickbuild
@@ -63,6 +64,9 @@ my tests so far:
 
 the path_names file for preprocess was great - it only needed 
 the single line for the preprocess.f90 source file.
+
+the 'use dart_mod, only : xxx ' lines worked fine.
+
 
 the path_names file for obs_assim_count needed more files
 listed than i expected.  the location_mod that was used
@@ -78,7 +82,17 @@ dependencies, in spite of them simply passing
 location types through.  i guess the size matters?
 
 
+i changed the obs_assim_count source to 'use' all the
+publics from the dart_mod.  some of the locations,
+obs_def, etc aren't in the dart_mod.  either they
+need to be added somehow, or we need to use them
+from another module.  so right now the status is
+that obs_assim_count doesn't compile when it's
+using symbols from the dart_mod.
 
+i'm going to come back and look at this another time.
 
+nsc
+18 aug 2021
 
 

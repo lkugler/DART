@@ -3,8 +3,13 @@
 # create dart library from object files
 # assumes all .o files are in a subdir 'objs'
 
-# assumes dart_mod.f90 has been compiled
-# and the .o and .mod are in the lib directory.
+# compile dart_mod.f90 in the current dir.
+# assumes all .o files are in the obsj subdir
+# and the .mod files are in ../include
+
+# TODO: this needs a makefile
+gfortran -c dart_mod.f90 -I../include 
+cp dart_mod.mod ../include
 
 export OLIST="adaptive_inflate_mod.o  \
 assim_model_mod.o  \

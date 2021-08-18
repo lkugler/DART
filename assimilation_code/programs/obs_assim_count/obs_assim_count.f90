@@ -13,38 +13,33 @@
 
 program obs_assim_count
 
-use        types_mod, only : r8, missing_r8, metadatalength, obstypelength
-use    utilities_mod, only : initialize_utilities,            &
-                             find_namelist_in_file, check_namelist_read,       &
-                             error_handler, E_ERR, E_MSG, nmlfileunit,         &
-                             do_nml_file, do_nml_term, get_next_filename,      &
-                             open_file, close_file, finalize_utilities,        &
-                             file_exist
-use     location_mod, only : location_type, get_location, set_location,        &
-                             LocationName, read_location, operator(/=),        &
-                             write_location
-use      obs_def_mod, only : obs_def_type, get_obs_def_time, get_obs_def_type_of_obs,&
-                             get_obs_def_location, read_obs_def,               &
-                             set_obs_def_time
-use     obs_kind_mod, only : max_defined_types_of_obs, get_name_for_type_of_obs, &
-                             get_index_for_type_of_obs, read_type_of_obs_table
-use time_manager_mod, only : time_type, operator(>), print_time, set_time,     &
-                             print_date, set_calendar_type,                    &
-                             operator(/=), get_calendar_type, NO_CALENDAR,     &
-                             operator(-)
-use obs_sequence_mod, only : obs_sequence_type, obs_type, write_obs_seq,       &
-                             init_obs, assignment(=), get_obs_def,             &
-                             init_obs_sequence, static_init_obs_sequence,      &
-                             read_obs_seq_header, read_obs_seq, get_num_obs,   &
-                             get_first_obs, get_last_obs, get_next_obs,        &
-                             insert_obs_in_seq, get_num_copies, get_num_qc,    &
-                             get_copy_meta_data, get_qc_meta_data,             &
-                             set_copy_meta_data, set_qc_meta_data,             &
-                             destroy_obs, destroy_obs_sequence,                &
-                             delete_seq_head, delete_seq_tail,                 &
-                             get_num_key_range, get_obs_key, get_qc,           &
-                             copy_partial_obs, get_next_obs_from_key,          &
-                             get_obs_def, set_obs_def
+use        dart_mod, only : r8, &
+ missing_r8, metadatalength, obstypelength,        &
+ initialize_utilities,                             &
+ find_namelist_in_file, check_namelist_read,       &
+ error_handler, E_ERR, E_MSG, nmlfileunit,         &
+ do_nml_file, do_nml_term, get_next_filename,      &
+ open_file, close_file, finalize_utilities,        &
+ file_exist, &
+ obs_def_type, get_obs_def_time, get_obs_def_type_of_obs, &
+ max_defined_types_of_obs, get_name_for_type_of_obs, &
+ time_type, operator(>), print_time, set_time,     &
+ print_date, set_calendar_type,                    &
+ operator(/=), get_calendar_type, NO_CALENDAR,     &
+ operator(-), &
+ obs_sequence_type, obs_type, write_obs_seq,       &
+ init_obs, assignment(=), get_obs_def,             &
+ static_init_obs_sequence,      &
+ read_obs_seq_header, read_obs_seq, get_num_obs,   &
+ get_first_obs, get_last_obs, get_next_obs,        &
+ get_num_copies, get_num_qc,    &
+ get_copy_meta_data, get_qc_meta_data,             &
+ destroy_obs, destroy_obs_sequence,                &
+ get_obs_key, get_qc
+
+!use obs_def_mod, only : obs_def_type, &
+! get_obs_def_time, get_obs_def_type_of_obs,&
+! max_defined_types_of_obs, get_name_for_type_of_obs
 
 implicit none
 
