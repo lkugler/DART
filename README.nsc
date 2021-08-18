@@ -1,0 +1,84 @@
+
+this branch is an attempt to combine as many modules as possible
+into what appears to users as a single "dart module".  this will
+allow us to rearrange the code inside the modules, split a single
+file into multiple modules, etc.
+
+it requires:
+
+compiling all code which is not dependent on locations, mpi or
+models into a library.
+
+updating a single 'module dart_mod' module to make all public
+routines available as if they come from one module.
+
+compile with  .mod files in an 'include' dir, and .o files
+in a 'lib' dir, archived into an .a file of the form libdart.a
+(or a shared lib libdart.so).
+
+path_names files then only need model_mod, location, mpi,
+and possibly window mods listed, which shouldn't change
+once they are set.  
+
+the mkmf.template files need -I$(DART)/include and -L$(DART)/lib
+on the compile and link lines.  the LD line needs -ldart added.
+
+
+as code is rearranged, the dart module source needs to update
+the use lines.  for new modules they need to be added to the
+compile and archive lines. 
+
+somehow the mkmf needs to depend on libdart.a and there
+needs to be a way to build it before building other programs.
+
+
+
+things i've learned so far - the use statements can have
+multiple operator() lines in different modules, but the
+public lines can only have a single instant of each
+operator type.  e.g. operator(==)
+
+maybe it's easier to make the default for the dart_mod
+be public.  then routines only need to be listed once
+rather than on use lines and then again on public lines.
+
+if there are name clashes we will have to sort that out.
+
+
+my tests so far:
+
+- went into the models/template/work directory
+- edited the quickbuild to *not* remove .o and .mod files
+- did a quickbuild.
+
+- copied the .mod files to $DART/include
+- copied the .o files to $DART/lib/objs
+
+- went into $DART/lib 
+- ran ./create_dart_lib
+
+- went into assimilation_code/programs/obs_assim_count/work
+- ran quickbuild
+
+
+the path_names file for preprocess was great - it only needed 
+the single line for the preprocess.f90 source file.
+
+the path_names file for obs_assim_count needed more files
+listed than i expected.  the location_mod that was used
+to build the library seems more intrusive than i expected.
+
+even though the calling code doesn't reference the
+internals of the location derived type, the compiler
+still knows it is different and gives an error.
+
+so locations need to be looked at more.
+e.g. cov_cutoff_mod and obs_sequence_mod both had
+dependencies, in spite of them simply passing
+location types through.  i guess the size matters?
+
+
+
+
+
+
