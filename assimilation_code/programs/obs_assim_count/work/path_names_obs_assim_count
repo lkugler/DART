@@ -9,4 +9,3 @@ assimilation_code/programs/obs_assim_count/obs_assim_count.f90
 models/template/model_mod.f90
 models/utilities/default_model_mod.f90
 observations/forward_operators/obs_def_mod.f90
-observations/forward_operators/obs_def_utilities_mod.f90
