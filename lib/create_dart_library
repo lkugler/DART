@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# create dart library from object files
+# assumes all .o files are in a subdir 'objs'
+
+# assumes dart_mod.f90 has been compiled
+# and the .o and .mod are in the lib directory.
+
+export OLIST="adaptive_inflate_mod.o  \
+assim_model_mod.o  \
+assim_tools_mod.o  \
+cov_cutoff_mod.o  \
+dart_time_io_mod.o  \
+direct_netcdf_mod.o  \
+distributed_state_mod.o  \
+ensemble_manager_mod.o  \
+fill_inflation_restart.o  \
+filter_mod.o  \
+forward_operator_mod.o  \
+io_filenames_mod.o  \
+location_io_mod.o  \
+model_check_utilities_mod.o  \
+model_mod_check.o  \
+netcdf_utilities_mod.o  \
+null_mpi_utilities_mod.o  \
+null_win_mod.o  \
+obs_def_mod.o  \
+obs_def_utilities_mod.o  \
+obs_impact_mod.o  \
+obs_kind_mod.o  \
+obs_model_mod.o  \
+obs_sequence_mod.o  \
+options_mod.o  \
+parse_args_mod.o  \
+quality_control_mod.o  \
+random_seq_mod.o  \
+reg_factor_mod.o  \
+sampling_error_correction_mod.o  \
+smoother_mod.o  \
+sort_mod.o  \
+state_structure_mod.o  \
+state_vector_io_mod.o  \
+test_interpolate_oned.o  \
+time_manager_mod.o  \
+types_mod.o  \
+utilities_mod.o"
+
+# archive all the individual dart mods
+cd objs
+ar -rv ../libdart.a $OLIST
+
+# add to the archive the single dart_mod
+# which contains all the public routines
+# and variables.  have user code 'use dart_mod'
+# instead of the individual modules.
+cd ..
+ar -rv libdart.a dart_mod.o
+
+exit 0
