@@ -47,6 +47,9 @@ if there are name clashes we will have to sort that out.
 
 my tests so far:
 
+- this has only been tested with the gfortran compiler
+- it requires using an updated mkmf.template.gfortran -> mkmf.template
+
 - went into the models/template/work directory
 - edited the quickbuild to *not* remove .o and .mod files
 - did a quickbuild.
@@ -56,7 +59,8 @@ my tests so far:
 
 - went into $DART/lib 
 - ran ./create_dart_lib
-  (this currently requires setting the compiler name in the script)
+  (this currently requires setting the compiler name in the script,
+   and it is hardcoded to gfortran)
 
 - went into assimilation_code/programs/obs_assim_count/work
 - ran quickbuild
@@ -65,7 +69,7 @@ my tests so far:
 the path_names file for preprocess was great - it only needed 
 the single line for the preprocess.f90 source file.
 
-the 'use dart_mod, only : xxx ' lines worked fine.
+the 'use dart_mod, only : xxx ' lines in preprocess.f90 worked fine.
 
 
 the path_names file for obs_assim_count needed more files
@@ -79,10 +83,13 @@ still knows it is different and gives an error.
 so locations need to be looked at more.
 e.g. cov_cutoff_mod and obs_sequence_mod both had
 dependencies, in spite of them simply passing
-location types through.  i guess the size matters?
+location types through.  i guess the size of the
+derived type matters?
 
+i got it to build with libdart.a but it still
+had use lines for each individual module.
 
-i changed the obs_assim_count source to 'use' all the
+i changed obs_assim_count.f90 file to 'use' all the
 publics from the dart_mod.  some of the locations,
 obs_def, etc aren't in the dart_mod.  either they
 need to be added somehow, or we need to use them
@@ -90,7 +97,11 @@ from another module.  so right now the status is
 that obs_assim_count doesn't compile when it's
 using symbols from the dart_mod.
 
-i'm going to come back and look at this another time.
+maybe we have to build the library with a specific
+locations mod, and link in the model_mod and
+mpi mods separately?
+
+i'm going to come back and look at this another day.
 
 nsc
 18 aug 2021
