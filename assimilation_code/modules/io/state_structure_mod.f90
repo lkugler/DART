@@ -1394,8 +1394,8 @@ integer, intent(in) :: iloc, jloc, kloc
 integer, intent(in) :: dom_id, var_id
 integer(i8)         :: get_dart_vector_index
 
-integer :: ndims, offset
-integer :: dsize(NF90_MAX_VAR_DIMS)
+integer :: ndims
+integer(i8) :: offset, dsize(NF90_MAX_VAR_DIMS)
 
 ndims = get_num_dims(dom_id, var_id)
 

@@ -36,9 +36,9 @@ character(len=32 ), parameter :: revision = "$Revision$"
 character(len=128), parameter :: revdate  = "$Date$"
 
 ! mpi window handles
-integer :: state_win   !! window for the forward operator
-integer :: mean_win    !! window for the mean
-integer :: current_win !! keep track of current window, start out assuming an invalid window
+integer(i8) :: state_win   !! window for the forward operator
+integer(i8) :: mean_win    !! window for the mean
+integer(i8) :: current_win !! keep track of current window, start out assuming an invalid window
 !>@todo the number of copies in the window is sloppy. You need to make this better.
 
 ! parameters for keeping track of which window is open

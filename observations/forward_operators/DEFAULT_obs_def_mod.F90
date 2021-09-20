@@ -505,7 +505,7 @@ subroutine get_expected_obs_from_def_distrib_state(state_handle, ens_size, copy_
 ! Compute forward operator for a particular obs_def
 type(ensemble_type), intent(in)  :: state_handle
 integer,             intent(in)  :: ens_size
-integer,             intent(in)  :: copy_indices(ens_size)
+integer(i8),         intent(in)  :: copy_indices(ens_size)
 integer,             intent(in)  :: key
 type(obs_def_type),  intent(in)  :: obs_def
 integer,             intent(in)  :: obs_kind_ind

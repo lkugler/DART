@@ -307,7 +307,7 @@ TYPE wrf_static_data_for_dart
    logical  :: polar
    logical  :: scm
 
-   integer  :: domain_size
+   integer(i8)  :: domain_size
    integer  :: localization_coord
    real(r8), dimension(:),     pointer :: znu, dn, dnw, zs, znw
    real(r8), dimension(:,:),   pointer :: mub, hgt
@@ -349,7 +349,7 @@ end type wrf_static_data_for_dart
 
 type wrf_dom
    type(wrf_static_data_for_dart), pointer :: dom(:)
-   integer :: model_size
+   integer(i8) :: model_size
 end type wrf_dom
 
 type(wrf_dom) :: wrf
@@ -374,8 +374,9 @@ integer :: io, iunit
 
 character (len=1)     :: idom
 logical, parameter    :: debug = .false.
-integer               :: ind, i, j, k, id, dart_index
-integer               :: my_index
+integer               :: ind, i, j, k, id
+integer(i8)           :: dart_index
+integer(i8)           :: my_index
 integer               :: var_element_list(max_state_variables)
 logical               :: var_update_list(max_state_variables)
 real(r8)              :: var_bounds_table(max_state_variables,2)
@@ -1007,7 +1008,7 @@ real(r8)            :: mod_sfc_elevation
 real(r8) :: x_ill(ens_size), x_iul(ens_size), x_ilr(ens_size), x_iur(ens_size), ugrid(ens_size), vgrid(ens_size)
 real(r8) :: x_ugrid_1(ens_size), x_ugrid_2(ens_size), x_ugrid_3(ens_size), x_ugrid_4(ens_size)
 real(r8) :: x_vgrid_1(ens_size), x_vgrid_2(ens_size), x_vgrid_3(ens_size), x_vgrid_4(ens_size)
-integer  :: e, count, uk !< index varibles for loop
+integer(i8)  :: e, count, uk !< index varibles for loop
 real(r8) :: failedcopies(ens_size)
 integer, allocatable  :: uniquek(:)
 integer  :: ksort(ens_size)
@@ -1016,7 +1017,6 @@ integer(i8) :: ugrid_1, ugrid_2, ugrid_3, ugrid_4, vgrid_1, vgrid_2, vgrid_3, vg
 integer(i8) :: z1d_ind1, z1d_ind2, t1d_ind, qv1d_ind
 
 id = 1
-
 ! call static_data_sizes(domain=id)
 
 ! Initialize stuff
@@ -1111,10 +1111,11 @@ else
    ! distances are used as weights to carry out horizontal interpolations
    call toGrid(xloc,i,dx,dxm)
    call toGrid(yloc,j,dy,dym)
-   
+
    ! 0.b Vertical stuff
 
    if ( debug ) then
+      write(*,*) 'get integer gridpoints', i,j,dx,dy, dxm, dym
       write(*,*) 'is_vertical(PRESSURE) ',is_vertical(location,"PRESSURE")
       write(*,*) 'is_vertical(HEIGHT) ',is_vertical(location,"HEIGHT")
       write(*,*) 'is_vertical(LEVEL) ',is_vertical(location,"LEVEL")
@@ -1985,6 +1986,7 @@ else
 
       ! This is for 3D vapor mixing ratio -- surface QV later
       if(.not. surf_var) then
+         write(*,*) 'i,j,k', i,j,k
          call simple_interp_distrib(fld, wrf, id, i, j, k, obs_kind, dxm, dx, dy, dym, uniquek, ens_size, state_handle )
          if (all(fld == missing_r8)) goto 200
       else ! This is for surface QV (Q2)
@@ -2962,14 +2964,14 @@ subroutine convert_vertical_obs(state_handle, num, locs, loc_qtys, loc_types, &
                                 which_vert, status)
 
 type(ensemble_type), intent(in)    :: state_handle
-integer,             intent(in)    :: num
+integer(i8),             intent(in)    :: num
 type(location_type), intent(inout) :: locs(:)
 integer,             intent(in)    :: loc_qtys(:)
 integer,             intent(in)    :: loc_types(:)
 integer,             intent(in)    :: which_vert
 integer,             intent(out)   :: status(:)
 
-integer :: i
+integer(i8) :: i
 
 do i=1, num
    call vert_convert(state_handle, locs(i), loc_qtys(i), status(i))
@@ -2983,7 +2985,7 @@ subroutine convert_vertical_state(state_handle, num, locs, loc_qtys, loc_indx, &
                                   which_vert, istatus)
 
 type(ensemble_type), intent(in)    :: state_handle
-integer,             intent(in)    :: num
+integer(i8),             intent(in)    :: num
 type(location_type), intent(inout) :: locs(:)
 integer,             intent(in)    :: loc_qtys(:)
 integer(i8),         intent(in)    :: loc_indx(:)
@@ -4572,10 +4574,12 @@ subroutine height_to_zk(obs_v, mdl_v, n3, zk, lev0)
   lev0 = .false.
 
   ! if out of range completely, return missing_r8 and lev0 false
+  write(*,*) 'obs_v, mdl_v(0), mdl_v(n3), n3', obs_v, mdl_v(0), mdl_v(n3), n3
   if (obs_v < mdl_v(0) .or. obs_v > mdl_v(n3)) return
 
   ! if above surface but below lowest 3-d height level, return the
   ! height value but set lev0 true
+  write(*,*) 'obs_v, mdl_v(0), mdl_v(1)', obs_v, mdl_v(0), mdl_v(1)
   if(obs_v >= mdl_v(0) .and. obs_v < mdl_v(1)) then
     lev0 = .true.
     zk = (mdl_v(0) - obs_v)/(mdl_v(0) - mdl_v(1))
@@ -4584,6 +4588,7 @@ subroutine height_to_zk(obs_v, mdl_v, n3, zk, lev0)
 
   ! find the 2 height levels the value is between and return that
   ! as a real number, including the fraction between the levels.
+  write(*,*) 'obs_v, mdl_v(k), mdl_v(k+1)', obs_v, mdl_v(k), mdl_v(k+1)
   do k = 1,n3-1
      if(obs_v >= mdl_v(k) .and. obs_v <= mdl_v(k+1)) then
         zk = real(k) + (mdl_v(k) - obs_v)/(mdl_v(k) - mdl_v(k+1))
@@ -4615,7 +4620,7 @@ logical  :: debug = .false.
 
 !HK 
 real(r8), allocatable :: x_ill(:), x_ilr(:), x_iul(:), x_iur(:)
-
+write(*,*) 'get_model_pressure_profile_distrib'
 allocate(pres1(ens_size), pres2(ens_size), pres3(ens_size), pres4(ens_size))
 allocate(x_ill(ens_size), x_ilr(ens_size), x_iul(ens_size), x_iur(ens_size))
 
@@ -4626,7 +4631,7 @@ if ( boundsCheck( i, wrf%dom(id)%periodic_x, id, dim=1, type=wrf%dom(id)%type_t 
    if ( rc .ne. 0 ) &
         print*, 'model_mod.f90 :: get_model_pressure_profile :: getCorners rc = ', rc
 
-
+   write(*,*) 'aft getcorners', ll, lr, ul, ur, k
    do k=1,n
       pres1 = model_pressure_t_distrib(ll(1), ll(2), k,id,state_handle, ens_size)
       pres2 = model_pressure_t_distrib(lr(1), lr(2), k,id,state_handle, ens_size)
@@ -4699,7 +4704,7 @@ else
 endif
 
 deallocate(pres1, pres2, pres3, pres4, x_ill, x_ilr, x_iul, x_iur)
-
+write(*,*) 'end get_model_pressure_profile_distrib'
 end subroutine get_model_pressure_profile_distrib
 
 !#######################################################
@@ -5375,7 +5380,6 @@ if ( boundsCheck( i, wrf%dom(id)%periodic_x, id, dim=1, type=wrf%dom(id)%type_gz
         print*, 'model_mod.f90 :: get_model_height_profile :: getCorners rc = ', rc
 
    do k = 1, wrf%dom(id)%var_size(3,wrf%dom(id)%type_gz)
-
       ill = get_dart_vector_index(ll(1), ll(2), k, domain_id(id), wrf%dom(id)%type_gz)
       iul = get_dart_vector_index(ul(1), ul(2), k, domain_id(id), wrf%dom(id)%type_gz)
       ilr = get_dart_vector_index(lr(1), lr(2), k, domain_id(id), wrf%dom(id)%type_gz)
@@ -8125,7 +8129,7 @@ if ( in_state ) then
          call getCorners(i, j, id, wrf_type, ll, ul, lr, ur, rc )
          if ( rc .ne. 0 ) &
          print*, 'model_mod.f90 :: model_interpolate :: getCorners QNSNOW rc = ', rc
-               
+
          ! Interpolation for QNSNOW field at level k
          ill = get_dart_vector_index(ll(1), ll(2), uniquek(uk), domain_id(id), wrf_type)
          iul = get_dart_vector_index(ul(1), ul(2), uniquek(uk), domain_id(id), wrf_type)

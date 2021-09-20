@@ -170,7 +170,7 @@ type(time_type)      :: time1
 integer              :: secs, days
 character(len=20)    :: task_str ! string to hold the task number
 integer              :: ens_size = 1 ! This is to avoid magic number 1s
-integer              :: copy_indices(1) = 1
+integer(i8)              :: copy_indices(1) = 1
 
 type(file_info_type) :: file_info_input
 type(file_info_type) :: file_info_output
@@ -383,6 +383,7 @@ window_time = set_time(0,0)
 curr_ens_time = set_time(0, 0)
 next_ens_time = set_time(0, 0)
 
+
 ! Advance model to the closest time to the next available observations
 AdvanceTime: do
    time_step_number = time_step_number + 1
@@ -402,7 +403,7 @@ AdvanceTime: do
    ! Get the model to a good time to use a next set of observations
    call move_ahead(ens_handle, 1, seq, last_key_used, window_time, &
       key_bounds, num_obs_in_set, curr_ens_time, next_ens_time)
-
+   
    call filter_sync_keys_time(ens_handle, key_bounds, num_obs_in_set, curr_ens_time, next_ens_time)
 
    if(key_bounds(1) < 0) then
@@ -486,8 +487,11 @@ AdvanceTime: do
    write(msgstring, '(A,I8,A)') 'Ready to evaluate up to', size(keys), ' observations'
    call trace_message(msgstring, 'perfect_model_obs:', -1)
 
+   write(*,*) '5'
+
    ! Compute the forward observation operator for each observation in set
    do j = 1, fwd_op_ens_handle%my_num_vars
+      write(*,*) 'j', j, fwd_op_ens_handle%my_num_vars
 
       ! Some compilers do not like mod by 0, so test first.
       if (print_every_nth_obs > 0) nth_obs = mod(j, print_every_nth_obs)
@@ -502,17 +506,23 @@ AdvanceTime: do
          ! or if you want timestamps:
          !     call timestamp(msgstring, pos="debug")
       endif
+      write(*,*) 'Processing observation ', j,' of ', num_obs_in_set
       
       ! Compute the observations from the state
       global_obs_num = fwd_op_ens_handle%my_vars(j)
+      write(*,*) global_obs_num, ens_size, copy_indices
       call get_expected_obs_distrib_state(seq, keys(global_obs_num:global_obs_num), &
          curr_ens_time, .true., &
          istatus, assimilate_this_ob, evaluate_this_ob, &
          ens_handle, ens_size, copy_indices, true_obs)
 
-      fwd_op_ens_handle%copies(1, j) = true_obs(1)
+      write(*,*) 'after get_expected_obs_distrib_state'
 
+      fwd_op_ens_handle%copies(1, j) = true_obs(1)
+      write(*,*) '34sdfgsdfg3'
       qc_ens_handle%copies(1, j) = set_input_qc(istatus(1), assimilate_this_ob, evaluate_this_ob)
+
+      write(*,*) 'as2525e'
 
       ! FIXME: we could set different qc codes, like 1004, 1005, to
       ! indicate why this obs isn't being processed - separate failed
@@ -528,6 +538,8 @@ AdvanceTime: do
       endif
 
    end do
+
+   write(*,*) '6'
 
    ! collect on task 0 and load up the obs_sequence
    call all_copies_to_all_vars(fwd_op_ens_handle)
@@ -589,6 +601,7 @@ AdvanceTime: do
    last_key_used = key_bounds(2)
 
 end do AdvanceTime
+write(*,*) 'after advancetime'
 
 ! if logging errors, close unit
 if(output_forward_op_errors) call close_file(forward_unit)

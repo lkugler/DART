@@ -282,7 +282,7 @@ type(file_info_type), intent(in)    :: file_info
 logical,              intent(in)    :: use_time_from_file
 type(time_type),      intent(inout) :: model_time
 
-integer :: dart_index ! where to start in state_ens_handle%copies
+integer(i8) :: dart_index ! where to start in state_ens_handle%copies
 integer :: domain
 type(stage_metadata_type) :: restart_files
 
@@ -302,6 +302,7 @@ state_ens_handle%time = model_time
 
 ! read in the data and transpose
 dart_index = 1 ! where to start in state_ens_handle%copies - this is modified by read_transpose
+write(*,*) 'read_restart_direct', dart_index
 do domain = 1, get_num_domains()
    call read_transpose(state_ens_handle, restart_files, domain, dart_index, buffer_state_io)
 enddo
@@ -320,7 +321,7 @@ subroutine write_restart_direct(state_ens_handle, file_name_handle)
 type(ensemble_type),    intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in) :: file_name_handle
 
-integer :: dart_index !< where to start in state_ens_handle%copies
+integer(i8) :: dart_index !< where to start in state_ens_handle%copies
 integer :: domain !< loop index
 
 if ( .not. module_initialized ) call state_vector_io_init() ! to read the namelist
@@ -358,8 +359,8 @@ type(ensemble_type),         intent(inout) :: ens_handle
 type(adaptive_inflate_type), intent(in)    :: prior_inflate_handle
 type(adaptive_inflate_type), intent(in)    :: post_inflate_handle
 
-integer :: owner, owners_index
-integer(i8) :: first_element
+integer :: owner
+integer(i8) :: first_element, owners_index
 real(r8), allocatable :: inf_array(:) ! 2 or 4 values
 integer :: inf_count
 logical :: return_me ! flag to return if not read any inflation values from files

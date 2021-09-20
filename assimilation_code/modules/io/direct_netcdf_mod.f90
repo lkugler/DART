@@ -172,7 +172,7 @@ subroutine read_transpose(state_ens_handle, name_handle, domain, dart_index, rea
 type(ensemble_type),       intent(inout) :: state_ens_handle !< Ensemble handle
 type(stage_metadata_type), intent(in)    :: name_handle      !< Name handle
 integer,                   intent(in)    :: domain           !< Which domain to read
-integer,                   intent(inout) :: dart_index       !< This is for multiple domains
+integer(i8),               intent(inout) :: dart_index       !< This is for multiple domains
 logical,                   intent(in)    :: read_single_vars !< Read one variable at a time
 
 if (task_count() == 1) then
@@ -194,7 +194,7 @@ subroutine transpose_write(state_ens_handle, name_handle, domain, &
 type(ensemble_type),       intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in)    :: name_handle
 integer,                   intent(in)    :: domain
-integer,                   intent(inout) :: dart_index
+integer(i8),               intent(inout) :: dart_index
 logical,                   intent(in)    :: write_single_vars !< write one variable at a time
 logical,                   intent(in)    :: write_single_precision
 
@@ -495,12 +495,15 @@ integer, dimension(NF90_MAX_VAR_DIMS) :: dim_lengths
 integer, dimension(NF90_MAX_VAR_DIMS) :: dim_start_point
 
 integer :: icopy, ivar, domain  
-integer :: ens_size, extra_size, time_size, var_size, elm_count, ndims
+integer :: ens_size, extra_size, time_size, ndims
 integer :: my_pe, recv_pe, recv_start, recv_end, start_rank
-integer :: start_pos, end_pos, send_start, send_end, start_point
+integer :: send_start, send_end
 logical :: do_perturb, is_sender, is_receiver, is_extra_copy
+integer(i8) :: start_pos, end_pos, var_size, start_point, elm_count
 
 real(r8), allocatable :: var_block(:)
+
+write(*,*) 'start read_single_file'
 
 do_perturb = .false.
 if ( present(pert_from_single_copy) ) then
@@ -525,6 +528,8 @@ fname = get_restart_filename(file_handle%stage_metadata, 1, domain)
 if( use_time_from_file ) mtime = read_model_time(fname)
 
 state_ens_handle%time = mtime
+
+write(*,*) 'asdfasdf'
 
 ret = nf90_open(fname, NF90_NOWRITE, my_ncid)
 call nc_check(ret, 'read_single_file: nf90_open', fname)
@@ -551,6 +556,8 @@ call get_pe_loops(ens_size, recv_start, recv_end, send_start, send_end)
 
 call check_singlefile_member_info(my_ncid, fname, ens_size, do_perturb)
 
+write(*,*) 'before copy loop'
+
 COPY_LOOP: do icopy = 1, ens_size+extra_size
 
    ! only SINGLE_IO_TASK_ID reads and distributes data 
@@ -568,10 +575,13 @@ COPY_LOOP: do icopy = 1, ens_size+extra_size
    ! starting position in the copies array
    start_pos  = 1
 
+   write(*,*) 'get_num_variables(domain)', get_num_variables(domain)
+
    VAR_LOOP: do ivar = 1, get_num_variables(domain)
 
       var_size = get_variable_size(domain, ivar)
       varname  = get_variable_name(domain, ivar)
+      write(*,*) 'varname', varname, 'var_size', var_size
    
       ! work out netcdf dimension id's and lenghts
       call get_dimension_info(icopy, domain, ivar, time_size, is_extra_copy, &
@@ -600,6 +610,8 @@ COPY_LOOP: do icopy = 1, ens_size+extra_size
 
       endif
       
+      write(*,*) 'end if is_sender'
+
       !>@todo FIXME : just reading and distributing one variable at a time.  
       !>              Should probably do this in a block?
       !start_rank = get_start_rank(start_var, domain)
@@ -896,7 +908,7 @@ subroutine read_transpose_single_task(state_ens_handle, name_handle, domain, dar
 type(ensemble_type),      intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in)   :: name_handle
 integer,                   intent(in)   :: domain
-integer,                  intent(inout) :: dart_index !< This is for multiple domains
+integer(i8),                  intent(inout) :: dart_index !< This is for multiple domains
 
 real(r8), allocatable :: vector(:)
 
@@ -957,7 +969,7 @@ subroutine transpose_write_single_task(state_ens_handle, name_handle, domain, &
 type(ensemble_type),       intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in)    :: name_handle
 integer,                   intent(in)    :: domain
-integer,                   intent(inout) :: dart_index
+integer(i8),                   intent(inout) :: dart_index
 logical,                   intent(in)    :: write_single_precision
 
 ! netcdf variables
@@ -1063,7 +1075,7 @@ subroutine read_transpose_multi_task(state_ens_handle, name_handle, domain, &
 type(ensemble_type),       intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in)    :: name_handle
 integer,                   intent(in)    :: domain
-integer,                   intent(inout) :: dart_index !< This is for multiple domains
+integer(i8),                   intent(inout) :: dart_index !< This is for multiple domains
 logical,                   intent(in)    :: read_var_by_var !< Read one variable at a time 
 
 integer :: start_var, end_var   !< start/end variables in a read block
@@ -1071,17 +1083,17 @@ integer :: start_rank           !< starting rank containg variable of interest
 integer :: recv_start, recv_end !< start/end variables for receives
 integer :: send_start, send_end !< start/end variables for sends
 integer :: recv_pe, sending_pe  !< PEs sending and receiving data
-integer :: elm_count            !< number of elements to send
-integer :: block_size           !< number of state elements in a block
-integer :: istart, iend         !< position in state vector copies array
+integer(i8) :: elm_count            !< number of elements to send
+integer(i8) :: block_size           !< number of state elements in a block
+integer(i8) :: istart, iend         !< position in state vector copies array
 integer :: ens_size             !< ensemble size
 integer :: my_pe                !< task or pe?
 integer :: ensemble_member      !< the ensmeble_member you are receiving.
 integer :: my_copy              !< which copy a pe is reading, from 1 to ens_handle%num_copies
 integer :: c                    !< copies_read loop index
-integer :: start_point
+integer(i8) :: start_point
 integer :: copies_read
-integer :: num_state_variables
+integer(i8) :: num_state_variables
 integer :: dummy_loop
 logical :: is_reader            !< pe is a reader or not
 real(r8), allocatable :: var_block(:) !< for reading in variables
@@ -1245,7 +1257,7 @@ subroutine transpose_write_multi_task(state_ens_handle, name_handle, domain, &
 type(ensemble_type),       intent(inout) :: state_ens_handle
 type(stage_metadata_type), intent(in)    :: name_handle
 integer,                   intent(in)    :: domain
-integer,                   intent(inout) :: dart_index
+integer(i8),                   intent(inout) :: dart_index
 logical,                   intent(in)    :: write_var_by_var !< Write a single variable, one at a time
 logical,                   intent(in)    :: write_single_precision
 
@@ -1254,8 +1266,8 @@ integer :: start_var, end_var !< start/end variables in a read block
 integer :: my_pe !< task or pe?
 integer :: recv_pe, sending_pe
 real(r8), allocatable :: var_block(:) !< for reading in variables
-integer :: block_size !< number of variables in a block
-integer :: elm_count !< number of elements to send
+integer(i8) :: block_size !< number of variables in a block
+integer(i8) :: elm_count !< number of elements to send
 integer :: istart!< position in state_ens_handle%copies
 integer :: iend
 integer :: ens_size !< ensemble size
@@ -2053,9 +2065,9 @@ subroutine send_to_waiting_task(state_ens_handle, recv_pe, start, elm_count, blo
 
 type(ensemble_type), intent(in) :: state_ens_handle
 integer,             intent(in) :: recv_pe ! receiving pe
-integer,             intent(in) :: start ! start in variable block on sender.
-integer,             intent(in) :: elm_count ! how many elements
-integer,             intent(in) :: block_size ! size of info on sender - the receiver only
+integer(i8),             intent(in) :: start ! start in variable block on sender.
+integer(i8),             intent(in) :: elm_count ! how many elements
+integer(i8),             intent(in) :: block_size ! size of info on sender - the receiver only
                                               ! gets part of this.
 real(r8),            intent(in) :: variable_block(block_size) ! variable info
 
@@ -2135,8 +2147,8 @@ subroutine wait_to_receive(state_ens_handle, recv_pe, &
 type(ensemble_type), intent(inout) :: state_ens_handle
 integer,             intent(in)    :: recv_pe ! receiving pe
 integer,             intent(in)    :: ensemble_member
-integer,             intent(in)    :: start  ! start in copies array on sender.
-integer,             intent(in)    :: finish ! end in copies array on sender
+integer(i8),             intent(in)    :: start  ! start in copies array on sender.
+integer(i8),             intent(in)    :: finish ! end in copies array on sender
 
 real(r8), allocatable :: buffer(:) ! for making send array contiguous
 
@@ -2173,8 +2185,8 @@ subroutine recv_variables_to_write(state_ens_handle, sending_pe, start, &
 type(ensemble_type), intent(in)    :: state_ens_handle
 integer,             intent(in)    :: sending_pe !! sending_pe
 integer,             intent(in)    :: start      !! start in vars array on receiver.
-integer,             intent(in)    :: elm_count  !! how many elements
-integer,             intent(in)    :: block_size !! size of info on sender - the receiver only gets part of this.
+integer(i8),             intent(in)    :: elm_count  !! how many elements
+integer(i8),             intent(in)    :: block_size !! size of info on sender - the receiver only gets part of this.
 real(r8),            intent(inout) :: variable_block(block_size) !! variable info
 
 real(r8), allocatable :: buffer(:) !! for making send array contiguous
@@ -2961,9 +2973,9 @@ function num_elements_on_pe(pe, start_rank, block_size) result(elm_count)
 
 integer, intent(in) :: pe
 integer, intent(in) :: start_rank
-integer, intent(in) :: block_size
+integer(i8), intent(in) :: block_size
 
-integer :: elm_count, remainder
+integer(i8) :: elm_count, remainder
 
 elm_count = block_size/task_count()
 remainder = mod(block_size, task_count())

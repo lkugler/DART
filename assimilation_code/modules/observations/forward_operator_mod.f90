@@ -114,7 +114,7 @@ integer :: ens_size
 
 integer, allocatable  :: istatus(:)
 integer, allocatable  :: var_istatus(:)
-integer, allocatable  :: my_copy_indices(:) ! The global ens index for each copy a task has
+integer(i8), allocatable  :: my_copy_indices(:) ! The global ens index for each copy a task has
 
 logical :: evaluate_this_ob, assimilate_this_ob
 
@@ -407,7 +407,7 @@ integer,                 intent(out)   :: istatus(num_ens)  !! FO return codes; 
 logical,                 intent(out)   :: assimilate_this_ob  !! true if assimilated; false otherwise
 logical,                 intent(out)   :: evaluate_this_ob  !! true if evaluated; false otherwise
 type(ensemble_type),     intent(in)    :: state_ens_handle  !! state ensemble handle
-integer,                 intent(in)    :: copy_indices(num_ens)  !! ??
+integer(i8),                 intent(in)    :: copy_indices(num_ens)  !! ??
 real(r8),                intent(inout) :: expected_obs(num_ens)  !! the array of computed forward operator values
 
 type(obs_type)     :: obs
@@ -428,6 +428,7 @@ call init_obs(obs, 0, 0)
 
 !>@todo do you ever use this with more than one obs?
 do i = 1, num_obs
+   write(*,*) 'get_obs_from_key'
    call get_obs_from_key(seq, keys(i), obs)
    call get_obs_def(obs, obs_def)
 
@@ -447,6 +448,7 @@ do i = 1, num_obs
          call error_handler(E_ERR, 'get_expected_obs', string1, source, revision, revdate, text2=string2)
       endif
 
+      write(*,*) 'get_state'
       expected_obs =  get_state(-1*int(obs_kind_ind,i8), state_ens_handle)
 
       ! FIXME : we currently have no option to eval only identity obs,
@@ -454,6 +456,8 @@ do i = 1, num_obs
       assimilate_this_ob = .true.; evaluate_this_ob = .false.
    
    else ! do forward operator for this kind
+
+      write(*,*) 'get_expected_obs_from_def_distrib_state'
 
       call get_expected_obs_from_def_distrib_state(state_ens_handle, num_ens, copy_indices, keys(i), &
          obs_def, obs_kind_ind, state_time, isprior, &

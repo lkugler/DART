@@ -33,9 +33,9 @@ character(len=32 ), parameter :: revision = "$Revision$"
 character(len=128), parameter :: revdate  = "$Date$"
 
 ! mpi window handles
-integer :: state_win   !< window for the forward operator
-integer :: mean_win    !< window for the mean
-integer :: current_win !< keep track of current window, start out assuming an invalid window
+integer(i8) :: state_win   !< window for the forward operator  ! lkugler not i8?
+integer(i8) :: mean_win    !< window for the mean
+integer(i8) :: current_win !< keep track of current window, start out assuming an invalid window
 
 ! parameters for keeping track of which window is open
 !>@todo should this be in the window_mod?  you will have to change in both cray 
@@ -44,7 +44,7 @@ integer, parameter :: NO_WINDOW    = -1
 integer, parameter :: MEAN_WINDOW  = 0 
 integer, parameter :: STATE_WINDOW = 2 
 
-integer :: data_count !! number of copies in the window
+integer(i8) :: data_count !! number of copies in the window
 integer(KIND=MPI_ADDRESS_KIND) :: window_size
 logical :: use_distributed_mean = .false. ! initialize to false
 
@@ -69,7 +69,7 @@ type(ensemble_type), intent(inout) :: state_ens_handle
 
 integer :: ierr
 integer :: bytesize !< size in bytes of each element in the window
-integer :: my_num_vars !< my number of vars
+integer(i8) :: my_num_vars !< my number of vars
 
 ! Find out how many copies to put in the window
 ! copies_in_window is not necessarily equal to ens_handle%num_copies
@@ -109,7 +109,7 @@ logical,             intent(in)  :: distribute_mean
 
 integer               :: ierr
 integer               :: bytesize
-integer               :: my_num_vars !< number of elements a task owns
+integer(i8)           :: my_num_vars !< number of elements a task owns
 
 ! create an ensemble handle of just the mean copy.
 use_distributed_mean = distribute_mean

@@ -101,12 +101,11 @@ integer(i8),         intent(in)  :: my_index !! index into state vector
 type(ensemble_type), intent(in)  :: state_ens_handle
 
 integer                        :: owner_of_state !! task who owns the state
-integer                        :: element_index !! local index of element
+integer(i8)                        :: element_index !! local index of element
 
 if (get_allow_transpose(state_ens_handle)) then
    x = state_ens_handle%vars(my_index, 1:data_count)
 else
-
    call get_var_owner_index(state_ens_handle, my_index, owner_of_state, element_index) ! pe
 
    owner_of_state = map_pe_to_task(state_ens_handle, owner_of_state)        ! task
@@ -119,8 +118,10 @@ else
       x = state_ens_handle%copies(1:data_count, element_index)
    else
      call get_from_fwd(owner_of_state, state_win, element_index, data_count, x)
+     !write(*,*) 'get_from_fwd: state_win, element_index, data_count, x', state_win, element_index, data_count, x
    endif
 endif
+
 
 end subroutine get_fwd
 
@@ -134,7 +135,7 @@ integer(i8),         intent(in)  :: my_index !! index into state vector
 type(ensemble_type), intent(in)  :: state_ens_handle
 
 integer                        :: owner_of_state !! task who owns the state
-integer                        :: element_index !! local index of element
+integer(i8)                        :: element_index !! local index of element
 
 if (get_allow_transpose(mean_ens_handle)) then
    x(1) = mean_ens_handle%vars(my_index, 1)
@@ -151,7 +152,9 @@ else
    endif
 
 endif
-
+if (x(1) .lt. -888887.0) then
+   write(*,*) 'owner_of_state, mean_win, element_index, x(1)', owner_of_state, mean_win, element_index, x(1)
+endif
 end subroutine get_mean
 
 !===========================================================

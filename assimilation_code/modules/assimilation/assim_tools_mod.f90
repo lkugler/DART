@@ -342,11 +342,11 @@ real(r8), allocatable :: close_state_dist(:)
 real(r8), allocatable :: last_close_obs_dist(:)
 real(r8), allocatable :: last_close_state_dist(:)
 
-integer(i8) :: state_index
+integer(i8) :: state_index, owners_index
 integer(i8), allocatable :: my_state_indx(:)
 integer(i8), allocatable :: my_obs_indx(:)
 
-integer :: my_num_obs, i, j, owner, owners_index, my_num_state
+integer :: my_num_obs, i, j, owner, my_num_state
 integer :: obs_mean_index, obs_var_index
 integer :: grp_beg(num_groups), grp_end(num_groups), grp_size, grp_bot, grp_top, group
 integer :: num_close_obs, obs_index, num_close_states

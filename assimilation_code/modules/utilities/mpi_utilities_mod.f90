@@ -1942,8 +1942,8 @@ end function get_dart_mpi_comm
 subroutine get_from_mean(owner, window, mindex, x)
 
 integer,  intent(in)  :: owner  ! task in the window that owns the memory
-integer,  intent(in)  :: window ! window object
-integer,  intent(in)  :: mindex ! index in the tasks memory
+integer(i8),  intent(in)  :: window ! window object   ! lkugler: this i8 ?
+integer(i8),  intent(in)  :: mindex ! index in the tasks memory
 real(r8), intent(out) :: x      ! result
 
 integer(KIND=MPI_ADDRESS_KIND) :: target_disp
@@ -1968,9 +1968,9 @@ end subroutine get_from_mean
 subroutine get_from_fwd(owner, window, mindex, num_rows, x)
 
 integer,  intent(in)  :: owner    ! task in the window that owns the memory
-integer,  intent(in)  :: window   ! window object
-integer,  intent(in)  :: mindex   ! index in the tasks memory
-integer,  intent(in)  :: num_rows ! number of rows in the window
+integer(i8),  intent(in)  :: window   ! window object  ! lkugler: this i8 ?
+integer(i8),  intent(in)  :: mindex   ! index in the tasks memory
+integer(i8),  intent(in)  :: num_rows ! number of rows in the window
 real(r8), intent(out) :: x(:)     ! result
 
 integer(KIND=MPI_ADDRESS_KIND) :: target_disp
@@ -1981,9 +1981,17 @@ integer :: errcode
 ! => Don't do anything with x in between mpi_get and mpi_win_lock
 
 target_disp = (mindex - 1)*num_rows
+!write(*,*) 'MPI_LOCK_SHARED, owner, 0, window, errcode', MPI_LOCK_SHARED, owner, 0, window, errcode
 call mpi_win_lock(MPI_LOCK_SHARED, owner, 0, window, errcode)
+!write(*,*) 'MPI_LOCK_SHARED, owner, 0, window, errcode', MPI_LOCK_SHARED, owner, 0, window, errcode
+
+!write(*,*) 'x, num_rows, datasize, owner, target_disp, num_rows, datasize, window, errcode', x, num_rows, datasize, owner, target_disp, num_rows, datasize, window, errcode
 call mpi_get(x, num_rows, datasize, owner, target_disp, num_rows, datasize, window, errcode)
+!write(*,*) 'x, num_rows, datasize, owner, target_disp, num_rows, datasize, window, errcode', x, num_rows, datasize, owner, target_disp, num_rows, datasize, window, errcode
+
+!write(*,*) 'owner, window, errcode', owner, window, errcode
 call mpi_win_unlock(owner, window, errcode)
+!write(*,*) 'owner, window, errcode', owner, window, errcode
 
 end subroutine get_from_fwd
 

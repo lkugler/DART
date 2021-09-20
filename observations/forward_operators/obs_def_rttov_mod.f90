@@ -638,7 +638,6 @@ logical              :: use_water_type       = .false.  ! use water type (0 = fr
 logical              :: addrefrac            = .false.  ! enable atmospheric refraction (all) 
 logical              :: plane_parallel       = .false.  ! treat atmosphere as strictly plane-parallel? (all)
 logical              :: use_salinity         = .false.  ! use ocean salinity (in practical salinity units) (MW, FASTEM 4-6 and TESSEM2)
-logical              :: apply_band_correction= .true.   ! apply band correction from coef file? (MW)
 logical              :: cfrac_data           = .false.  ! specify cloud fraction? (VIS/IR/MW)
 logical              :: clw_data             = .false.  ! specify non-precip cloud liquid water? (VIS/IR/MW)
 logical              :: rain_data            = .false.  ! specify precip cloud liquid water? (VIS/IR/MW)
@@ -675,9 +674,9 @@ integer              :: idg_scheme           = 2        ! Ou and Liou (1), Wyser
 logical              :: user_aer_opt_param   = .false.  ! specify aerosol scattering properties (VIS/IR, add_clouds only)
 logical              :: user_cld_opt_param   = .false.  ! specify cloud scattering properties (VIS/IR, add_clouds only)
 logical              :: grid_box_avg_cloud   = .true.   ! cloud concentrations are grid box averages. False = concentrations for cloudy layer only. (VIS/IR, add_clouds and not user_cld_opt_param only)
-real(r8)             :: cldstr_threshold     = -1.0_r8    ! threshold for cloud stream weights for scattering (VIS/IR, add_clouds only)
-logical              :: cldstr_simple        = .false.  ! If true, one clear column, one cloudy column (VIS/IR, add_clouds only)
-real(r8)             :: cldstr_low_cloud_top = 750.0_r8   ! cloud fraction maximum in layers from ToA down to specified hPa (VIS/IR, cldstr_simple only)
+real(r8)             :: cldcol_threshold     = -1.0_r8    ! threshold for cloud stream weights for scattering (VIS/IR, add_clouds only)
+integer              :: cloud_overlap        = 1        ! default: 1 (max/random overlap)
+real(r8)             :: cc_low_cloud_top = 750.0_r8   ! cloud fraction maximum in layers from ToA down to specified hPa (VIS/IR, cldstr_simple only)
 integer              :: ir_scatt_model       = 2        ! DOM (1) or Chou-scaling (2) (IR, add_clouds or add_aerosl only)
 integer              :: vis_scatt_model      = 1        ! DOM (1), single scat (2), or MFASIS (3) (VIS, addsolar and add_clouds or add_aerosl only)
 integer              :: dom_nstreams         = 8        ! number of streams to use with DOM (VIS/IR, add_clouds or add_aerosl and DOM model only, must be >= 2 and even)
@@ -711,7 +710,6 @@ namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               addrefrac,              &
                               plane_parallel,         &
                               use_salinity,           &
-                              apply_band_correction,  &
                               cfrac_data,             &
                               clw_data,               &
                               rain_data,              &
@@ -748,9 +746,9 @@ namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               user_aer_opt_param,     &
                               user_cld_opt_param,     &
                               grid_box_avg_cloud,     &
-                              cldstr_threshold,       &
-                              cldstr_simple,          &
-                              cldstr_low_cloud_top,   &
+                              cldcol_threshold,       &
+                              cloud_overlap,          &
+                              cc_low_cloud_top,       &
                               ir_scatt_model,         &
                               vis_scatt_model,        &
                               dom_nstreams,           &
@@ -1616,7 +1614,7 @@ logical,                  intent(in)    :: use_water_type
 logical,                  intent(in)    :: use_salinity
 logical,                  intent(in)    :: supply_foam_fraction
 logical,                  intent(in)    :: use_sfc_snow_frac
-
+write(*,*) 'atmos_profile_setup'
 allocate(atmos%temperature(ens_size, numlevels), &
          atmos%   moisture(ens_size, numlevels), &
          atmos%   pressure(ens_size, numlevels), &
@@ -2045,6 +2043,7 @@ DO imem = 1, ens_size
          if (debug) then
             write(string1,*) 'For ens #',imem,', pressure ',lvlidx(ilvl),' was greater than pressure ',&
                 lvlidx(ilvl+1),':',atmos % pressure(imem,lvlidx(ilvl)),' > ',atmos%pressure(imem,lvlidx(ilvl+1))
+            write(*,*) 'pres', atmos % pressure(imem,:)
             call error_handler(E_MSG,routine,string1,source,revision,revdate)
          end if
 
@@ -2392,7 +2391,7 @@ DO imem = 1, ens_size
 
    if (is_visir .and. do_lambertian) then
       ! Surface specularity (0-1)
-      runtime % profiles(imem) % skin % specularity = min(max(visir_md % specularity,0.0_jprb),1.0_jprb)
+      runtime % emissivity(imem) % specularity = min(max(visir_md % specularity,0.0_jprb),1.0_jprb)
    end if
 
    if (allocated(clouds % simple_cfrac)) then
@@ -2444,6 +2443,9 @@ end do ! profile data
 ! 6. Specify surface emissivity and reflectance
 ! --------------------------------------------------------------------------
 
+! Here we assume zero specularity
+runtime % emissivity(:) % specularity = 0._jprb
+
 ! Here we assume we have no values for input emissivities
 runtime % emissivity(:) % emis_in = 0._jprb
 
@@ -2460,6 +2462,8 @@ runtime % calcrefl(:) = (runtime % reflectance(:) % refl_in <= 0._jprb)
 
 ! Use default cloud top BRDF for simple cloud in VIS/NIR channels
 runtime % reflectance(:) % refl_cloud_top = 0._jprb
+
+write(*,*) 'before running'
 
 if (debug) then
    print *,'is_visir:',is_visir
@@ -2519,6 +2523,8 @@ else
       call error_handler(E_ERR, routine, string1, source, revision, revdate, text2=string2)
    end if
 end if
+
+write(*,*) 'after running'
 
 ! utility from obs_kind_mod for getting string of obs qty
 obs_qty_string = get_name_for_type_of_obs(flavor)
@@ -2702,8 +2708,6 @@ if (debug) then
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
    write(string1,*)'use_salinity           - ',use_salinity
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
-   write(string1,*)'apply_band_correction  - ',apply_band_correction
-   call error_handler(E_MSG,routine,string1,source,revision,revdate)
    write(string1,*)'cfrac_data             - ',cfrac_data
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
    write(string1,*)'clw_data               - ',clw_data
@@ -2776,11 +2780,11 @@ if (debug) then
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
    write(string1,*)'grid_box_avg_cloud     - ',grid_box_avg_cloud
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
-   write(string1,*)'cldstr_threshold       - ',cldstr_threshold
+   write(string1,*)'cldcol_threshold       - ',cldcol_threshold
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
-   write(string1,*)'cldstr_simple          - ',cldstr_simple
+   write(string1,*)'cloud_overlap          - ',cloud_overlap
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
-   write(string1,*)'cldstr_low_cloud_top   - ',cldstr_low_cloud_top
+   write(string1,*)'cc_low_cloud_top   - ',cc_low_cloud_top
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
    write(string1,*)'ir_scatt_model         - ',ir_scatt_model
    call error_handler(E_MSG,routine,string1,source,revision,revdate)
@@ -2870,9 +2874,7 @@ opts % rt_all % plane_parallel         = plane_parallel
 
 if (is_mw) then
    ! mw options could be used with direct or scatt, so set them here
-   opts % rt_mw % apply_band_correction = apply_band_correction
    opts % rt_mw % clw_data              = clw_data
-   opts % rt_mw % clw_calc_on_coef_lev  = .false.                 ! calculate CLW optical depths on input levels
    opts % rt_mw % clw_scheme            = clw_scheme
    opts % rt_mw % clw_cloud_top         = clw_cloud_top
    opts % rt_mw % fastem_version        = fastem_version
@@ -2889,14 +2891,13 @@ if (is_mw .and. .not. mw_clear_sky_only) then
    opts_scatt % config % fix_hgpl         = fix_hgpl
 
    opts_scatt % rad_down_lin_tau      = rad_down_lin_tau
-   opts_scatt % apply_band_correction = apply_band_correction
    opts_scatt % interp_mode           = interp_mode
    opts_scatt % lgradp                = .false.               ! Do not allow TL/AD/K of user pressure levels
    opts_scatt % reg_limit_extrap      = .true.                ! intelligently extend beyond the model top
    opts_scatt % fastem_version        = fastem_version
    opts_scatt % supply_foam_fraction  = supply_foam_fraction
    opts_scatt % use_q2m               = use_q2m
-   opts_scatt % lradiance             = .false.               ! Calculate Brightness Temperatures 
+   ! lkugler ! opts_scatt % lradiance             = .false.               ! Calculate Brightness Temperatures 
    opts_scatt % lusercfrac            = .false.               ! Have RTTOV-SCATT calculate the effective cloud fraction 
    opts_scatt % cc_threshold          = cc_threshold
 
@@ -2907,12 +2908,12 @@ if (is_mw .and. .not. mw_clear_sky_only) then
                              opts_scatt=opts_scatt, &
                              use_totalice=use_totalice)
 else
-   opts % rt_ir % ozone_data            = ozone_data
-   opts % rt_ir % co2_data              = co2_data
-   opts % rt_ir % n2o_data              = n2o_data
-   opts % rt_ir % co_data               = co_data
-   opts % rt_ir % ch4_data              = ch4_data
-   opts % rt_ir % so2_data              = so2_data
+   opts % rt_all % ozone_data            = ozone_data
+   opts % rt_all % co2_data              = co2_data
+   opts % rt_all % n2o_data              = n2o_data
+   opts % rt_all % co_data               = co_data
+   opts % rt_all % ch4_data              = ch4_data
+   opts % rt_all % so2_data              = so2_data
    opts % rt_ir % addsolar              = addsolar
    opts % rt_ir % rayleigh_single_scatt = rayleigh_single_scatt
    opts % rt_ir % do_nlte_correction    = do_nlte_correction
@@ -2923,9 +2924,9 @@ else
    opts % rt_ir % user_aer_opt_param    = user_aer_opt_param
    opts % rt_ir % user_cld_opt_param    = user_cld_opt_param
    opts % rt_ir % grid_box_avg_cloud    = grid_box_avg_cloud
-   opts % rt_ir % cldstr_threshold      = cldstr_threshold
-   opts % rt_ir % cldstr_simple         = cldstr_simple
-   opts % rt_ir % cldstr_low_cloud_top  = cldstr_low_cloud_top
+   opts % rt_ir % cldcol_threshold      = cldcol_threshold
+   opts % rt_ir % cloud_overlap         = cloud_overlap
+   opts % rt_ir % cc_low_cloud_top  = cc_low_cloud_top
    opts % rt_ir % ir_scatt_model        = ir_scatt_model
    opts % rt_ir % vis_scatt_model       = vis_scatt_model
    opts % rt_ir % dom_nstreams          = dom_nstreams
@@ -3476,7 +3477,7 @@ type(mw_metadata_type),    pointer :: mw_md
 
 logical :: is_visir
 logical :: return_now
-
+write(*,*) 'get_expected_radiance'
 !=================================================================================
 
 if ( .not. module_initialized ) call initialize_module
@@ -3583,17 +3584,20 @@ end if
 ! Set all of the istatuses back to zero for track_status
 istatus = 0
 
+write(*,*) 'getleveldata'
+
 GETLEVELDATA : do i = 1,numlevels
    loc = set_location(loc_lon, loc_lat, real(i,r8), VERTISLEVEL)
+   write(*,*) 'pressure'
 
    call interpolate(state_handle, ens_size, loc, QTY_PRESSURE, atmos%pressure(:,i), this_istatus)
    call check_status('QTY_PRESSURE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .true., return_now)
    if (return_now) return
-
+   write(*,*) 'temperature'
    call interpolate(state_handle, ens_size, loc, QTY_TEMPERATURE, atmos%temperature(:, i), this_istatus)
    call check_status('QTY_TEMPERATURE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .true., return_now)
    if (return_now) return
-
+   write(*,*) 'qvapor'
    call interpolate(state_handle, ens_size, loc, QTY_VAPOR_MIXING_RATIO, atmos%moisture(:, i), this_istatus)
    call check_status('QTY_VAPOR_MIXING_RATIO', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .true., return_now)
    if (return_now) return
@@ -4173,8 +4177,6 @@ function get_rttov_option_logical(field_name) result(p)
          p = PLANE_PARALLEL
       case('USE_SALINITY')
          p = USE_SALINITY
-      case('APPLY_BAND_CORRECTION')
-         p = APPLY_BAND_CORRECTION
       case('CFRAC_DATA')
          p = CFRAC_DATA
       case('CLW_DATA')
@@ -4229,8 +4231,8 @@ function get_rttov_option_logical(field_name) result(p)
          p = USER_CLD_OPT_PARAM
       case('GRID_BOX_AVG_CLOUD')
          p = GRID_BOX_AVG_CLOUD
-      case('CLDSTR_SIMPLE')
-         p = CLDSTR_SIMPLE
+      case('CLOUD_OVERLAP')
+         p = CLOUD_OVERLAP
       case('ADDPC')
          p = ADDPC
       case('ADDRADREC')

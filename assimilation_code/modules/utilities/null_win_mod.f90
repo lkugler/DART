@@ -34,9 +34,9 @@ type(ensemble_type) :: mean_ens_handle
 
 
 ! mpi window handles
-integer :: state_win   !< window for the forward operator
-integer :: mean_win    !< window for the mean
-integer :: current_win !< keep track of current window, start out assuming an invalid window
+integer(i8) :: state_win   !< window for the forward operator
+integer(i8) :: mean_win    !< window for the mean
+integer(i8) :: current_win !< keep track of current window, start out assuming an invalid window
 
 ! parameters for keeping track of which window is open
 integer, parameter :: NO_WINDOW    = -1

@@ -61,8 +61,8 @@ type ensemble_type
 
    !DIRECT ACCESS INTO STORAGE IS USED TO REDUCE COPYING: BE CAREFUL
    !!!private
-   integer(i8)                  :: num_vars
-   integer                      :: num_copies, my_num_copies, my_num_vars
+   integer(i8)                  :: num_vars, my_num_vars       ! describes number of variables (state, obs)
+   integer                      :: num_copies, my_num_copies   ! describes number of ensemble members
    integer,        allocatable  :: my_copies(:)
    integer(i8),    allocatable  :: my_vars(:)
    ! Storage in next line is to be used when each pe has all copies of subset of vars
@@ -811,10 +811,9 @@ subroutine get_var_owner_index(ens_handle, var_number, owner, owners_index)
 type (ensemble_type), intent(in)  :: ens_handle
 integer(i8), intent(in)  :: var_number
 integer,     intent(out) :: owner
-integer,     intent(out) :: owners_index
+integer(i8),     intent(out) :: owners_index
 
-integer :: div
-
+integer(i8) :: div
 ! Asummes distribution type 1
 div = (var_number - 1) / num_pes
 owner = var_number - div * num_pes - 1
@@ -888,7 +887,7 @@ integer(i8),   intent(out) :: var_list(:)
 integer,       intent(out) :: pes_num_vars
 !!!integer, intent(in) :: distribution_type
 
-integer :: num_per_pe_below, num_left_over, i
+integer(i8) :: num_per_pe_below, num_left_over, i
 
 ! Figure out number of vars stored by pe
 num_per_pe_below = num_vars / num_pes
@@ -920,7 +919,7 @@ integer,   intent(in)    :: num_copies, pe
 integer,   intent(out)   :: copy_list(:), pes_num_copies
 !!!integer, intent(in) :: distribution_type
 
-integer :: num_per_pe_below, num_left_over, i
+integer(i8) :: num_per_pe_below, num_left_over, i
 
 ! Figure out which copies stored by pe
 num_per_pe_below = num_copies / num_pes
